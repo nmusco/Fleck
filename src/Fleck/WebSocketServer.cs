@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Generic;
@@ -31,6 +32,7 @@ namespace Fleck
         public string Location { get; private set; }
         public int Port { get; private set; }
         public X509Certificate2 Certificate { get; set; }
+        public RemoteCertificateValidationCallback RemoteCertificateValidationCallback { get; set; }
         public IEnumerable<string> SupportedSubProtocols { get; set; }
 
         public bool IsSecure
@@ -90,6 +92,7 @@ namespace Fleck
                 FleckLog.Debug("Authenticating Secure Connection");
                 clientSocket
                     .Authenticate(Certificate,
+                                  RemoteCertificateValidationCallback,
                                   connection.StartReceiving,
                                   e => FleckLog.Warn("Failed to Authenticate", e));
             }

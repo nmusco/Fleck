@@ -9,36 +9,33 @@ namespace Fleck
 {
     public class WebSocketServer : IWebSocketServer
     {
-        private readonly string _scheme;
+		private readonly IPEndPoint _ipEndPoint;
         private Action<IWebSocketConnection> _config;
 
-        public WebSocketServer(string location)
-            : this(8181, location)
-        {
-        }
+		public WebSocketServer()
+			: this(IPAddress.Any) { }
+		public WebSocketServer(int port)
+			: this(IPAddress.Any, port) { }
 
-        public WebSocketServer(int port, string location)
-        {
-            var uri = new Uri(location);
-            Port = uri.Port > 0 ? uri.Port : port;
-            Location = location;
-            _scheme = uri.Scheme;
-            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
-            ListenerSocket = new SocketWrapper(socket);
-            SupportedSubProtocols = new string[0];
-        }
+		public WebSocketServer(IPAddress ipAddress, int port = 8181)
+		{
+			_ipEndPoint = new IPEndPoint(ipAddress, port);
+
+			var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
+			ListenerSocket = new SocketWrapper(socket);
+			SupportedSubProtocols = new string[0];
+		}
 
         public ISocket ListenerSocket { get; set; }
-        public string Location { get; private set; }
-        public int Port { get; private set; }
-        public X509Certificate2 Certificate { get; set; }
-        public RemoteCertificateValidationCallback RemoteCertificateValidationCallback { get; set; }
-        public IEnumerable<string> SupportedSubProtocols { get; set; }
+		public X509Certificate2 Certificate { get; set; }
+		public RemoteCertificateValidationCallback RemoteCertificateValidationCallback { get; set; }
+		public IEnumerable<string> SupportedSubProtocols { get; set; }
 
-        public bool IsSecure
-        {
-            get { return _scheme == "wss" && Certificate != null; }
-        }
+		public bool IsSecure { get { return Certificate != null; } }
+		public string Scheme { get { return IsSecure ? "wss" : "ws"; } }
+		public IPAddress Address { get { return _ipEndPoint.Address; } }
+		public int Port { get { return _ipEndPoint.Port; } }
+		public string Location { get { return Scheme + "://" + Address + ":" + Port; } }
 
         public void Dispose()
         {
@@ -47,18 +44,11 @@ namespace Fleck
 
         public void Start(Action<IWebSocketConnection> config)
         {
-            var ipLocal = new IPEndPoint(IPAddress.Any, Port);
-            ListenerSocket.Bind(ipLocal);
+            ListenerSocket.Bind(_ipEndPoint);
             ListenerSocket.Listen(100);
+
             FleckLog.Info("Server started at " + Location);
-            if (_scheme == "wss")
-            {
-                if (Certificate == null)
-                {
-                    FleckLog.Error("Scheme cannot be 'wss' without a Certificate");
-                    return;
-                }
-            }
+
             ListenForClients();
             _config = config;
         }
@@ -78,7 +68,7 @@ namespace Fleck
             connection = new WebSocketConnection(
                 clientSocket,
                 _config,
-                bytes => RequestParser.Parse(bytes, _scheme),
+                bytes => RequestParser.Parse(bytes, Scheme),
                 r => HandlerFactory.BuildHandler(r,
                                                  s => connection.OnMessage(s),
                                                  connection.Close,

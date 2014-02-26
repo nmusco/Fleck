@@ -16,7 +16,7 @@ namespace Fleck.Tests
         public void Setup()
         {
             _repository = new MockRepository(MockBehavior.Default);
-            _server = new WebSocketServer("ws://localhost:8000");
+            _server = new WebSocketServer(IPAddress.Any, 8000);
         }
 
         [Test]
@@ -31,27 +31,19 @@ namespace Fleck.Tests
             socketMock.Verify(s => s.Accept(It.IsAny<Action<ISocket>>(), It.IsAny<Action<Exception>>()));
         }
 
-        [Test]
-        public void ShouldBeSecureWithWssAndCertificate()
-        {
-            var server = new WebSocketServer("wss://secureplace.com:8000");
-            server.Certificate = new X509Certificate2();
-            Assert.IsTrue(server.IsSecure);
-        }
+		[Test]
+		public void ShouldBeSecureWithCertificate()
+		{
+			var server = new WebSocketServer(IPAddress.Any, 8000);
+			server.Certificate = new X509Certificate2();
+			Assert.IsTrue(server.IsSecure);
+		}
 
-        [Test]
-        public void ShouldNotBeSecureWithWssAndNoCertificate()
-        {
-            var server = new WebSocketServer("wss://secureplace.com:8000");
-            Assert.IsFalse(server.IsSecure);
-        }
-
-        [Test]
-        public void ShouldNotBeSecureWithoutWssAndCertificate()
-        {
-            var server = new WebSocketServer("ws://secureplace.com:8000");
-            server.Certificate = new X509Certificate2();
-            Assert.IsFalse(server.IsSecure);
-        }
+		[Test]
+		public void ShouldNotBeSecureWithNoCertificate()
+		{
+			var server = new WebSocketServer(IPAddress.Any, 8000);
+			Assert.IsFalse(server.IsSecure);
+		}
     }
 }

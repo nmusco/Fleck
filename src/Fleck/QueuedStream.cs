@@ -75,7 +75,7 @@ namespace Fleck
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotSupportedException("Queued stream does not support synchronous write operations yet.");
+            throw new NotSupportedException("QueuedStream does not support synchronous write operations yet.");
         }
 
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -109,7 +109,19 @@ namespace Fleck
 
         public override void EndWrite(IAsyncResult asyncResult)
         {
-            throw new NotSupportedException("Queued stream does not support synchronous write operations yet.");
+            if (asyncResult is QueuedWriteResult)
+            {
+                var queuedResult = asyncResult as QueuedWriteResult;
+                if (queuedResult.ActualResult == null)
+                {
+                    throw new NotSupportedException("QueuedStream does not support synchronous write operations yet. Please wait for callback to be invoked before calling EndWrite.");
+                }
+                _stream.EndWrite(queuedResult.ActualResult);
+            }
+            else
+            {
+                _stream.EndWrite(asyncResult);
+            }
         }
 
         public override void Close()

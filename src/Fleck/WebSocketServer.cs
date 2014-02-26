@@ -89,12 +89,12 @@ namespace Fleck
 
             if (IsSecure)
             {
-                FleckLog.Debug("Authenticating Secure Connection");
-                clientSocket
-                    .Authenticate(Certificate,
-                                  RemoteCertificateValidationCallback,
-                                  connection.StartReceiving,
-                                  e => FleckLog.Warn("Failed to Authenticate", e));
+				FleckLog.Debug("Authenticating Secure Connection");
+				clientSocket.Authenticate(
+					Certificate,
+					RemoteCertificateValidationCallback,
+					connection.StartReceiving,
+					e => FleckLog.Warn("Failed to Authenticate", e));
             }
             else
             {

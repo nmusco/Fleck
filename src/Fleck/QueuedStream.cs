@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
@@ -13,7 +14,7 @@ namespace Fleck
     {
         private Stream _stream;
         private Queue<WriteData> _queue = new Queue<WriteData>();
-        private bool _pendingWrite = false;
+        private int _pendingWrite = 0;
         private bool _disposed = false;
 
         public QueuedStream(Stream stream)
@@ -87,18 +88,16 @@ namespace Fleck
         {
             lock (_queue)
             {
-                if (_pendingWrite)
+                var data = new WriteData(buffer, offset, count, callback, state);
+                if (_pendingWrite > 0)
                 {
-                    var data = new WriteData(buffer, offset, count, callback, state);
                     _queue.Enqueue(data);
                     return data.AsyncResult;
                 }
                 else
                 {
-                    _pendingWrite = true;
-                    return BeginWriteInternal(buffer, offset, count, callback, state);
+                    return BeginWriteInternal(buffer, offset, count, callback, state, data);
                 }
-
             }
         }
 
@@ -112,15 +111,17 @@ namespace Fleck
             if (asyncResult is QueuedWriteResult)
             {
                 var queuedResult = asyncResult as QueuedWriteResult;
-                if (queuedResult.ActualResult == null)
+                if (queuedResult.Exception != null) throw queuedResult.Exception;
+                var ar = queuedResult.ActualResult;
+                if (ar == null)
                 {
-                    throw new NotSupportedException("QueuedStream does not support synchronous write operations yet. Please wait for callback to be invoked before calling EndWrite.");
+                    throw new NotSupportedException("QueuedStream does not support synchronous write operations. Please wait for callback to be invoked before calling EndWrite.");
                 }
-                _stream.EndWrite(queuedResult.ActualResult);
+                // EndWrite on actual stream should already be invoked. 
             }
             else
             {
-                _stream.EndWrite(asyncResult);
+                throw new ArgumentException();
             }
         }
 
@@ -142,23 +143,45 @@ namespace Fleck
             base.Dispose(disposing);
         }
 
-        private IAsyncResult BeginWriteInternal(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        private IAsyncResult BeginWriteInternal(byte[] buffer, int offset, int count, AsyncCallback callback, object state, WriteData queued)
         {
+            _pendingWrite++;
             var result = _stream.BeginWrite(buffer, offset, count, ar => {
+                // callback can be executed even before return value of BeginWriteInternal is set to this property
+                queued.AsyncResult.ActualResult = ar;
+                try
+                {
+                    // so that we can call BeginWrite again
+                    _stream.EndWrite(ar);
+                }
+                catch (Exception exc)
+                {
+                    queued.AsyncResult.Exception = exc;
+                }
+
+                // one down, another is good to go
                 lock (_queue)
                 {
-                    if (_queue.Count > 0)
+                    _pendingWrite--;
+                    while (_queue.Count > 0)
                     {
-                        // one down, another is good to go
                         var data = _queue.Dequeue();
-                        data.AsyncResult.ActualResult = BeginWriteInternal(data.Buffer, data.Offset, data.Count, data.Callback, data.State);
+                        try
+                        {
+                            data.AsyncResult.ActualResult = BeginWriteInternal(data.Buffer, data.Offset, data.Count, data.Callback, data.State, data);
+                            break;
+                        }
+                        catch (Exception exc)
+                        {
+                            _pendingWrite--;
+                            data.AsyncResult.Exception = exc;
+                            callback(data.AsyncResult);
+                            return;
+                        }
                     }
-                    else
-                    {
-                        _pendingWrite = false;
-                    }
-                    callback(ar);
+                    callback(queued.AsyncResult);
                 }
+
             }, state);
             return result;
         }
@@ -186,24 +209,15 @@ namespace Fleck
         private class QueuedWriteResult : IAsyncResult 
         {
             private object _state;
-            private IAsyncResult _actualResult;
 
             public QueuedWriteResult(object state)
             {
                 _state = state;
             }
 
-            public IAsyncResult ActualResult
-            {
-                get
-                {
-                    return _actualResult;
-                }
-                set
-                {
-                    _actualResult = value;
-                }
-            }
+            public Exception Exception { get; set; }
+
+            public IAsyncResult ActualResult { get; set; }
             
             public object AsyncState
             {
@@ -214,7 +228,7 @@ namespace Fleck
             {
                 get 
                 {
-                    throw new NotSupportedException("Queued write operations does not support wait handles yet.");
+                    throw new NotSupportedException("Queued write operations does not support wait handle.");
                 }
             }
 

@@ -11,8 +11,8 @@ namespace Fleck
         Action<byte[]> OnPing { get; set; }
         Action<byte[]> OnPong { get; set; }
         Action<Exception> OnError { get; set; }
-        void Send(string message);
-        void Send(byte[] message);
+        void Send(string message, string logMessage = null);
+        void Send(byte[] message, string logMessage = null);
         void SendPing(byte[] message);
         void SendPong(byte[] message);
         void Close();

@@ -74,6 +74,8 @@
     <Compile Include="FleckLog.cs" />
     <Compile Include="Interfaces\IWebSocketServer.cs" />
     <Compile Include="Interfaces\IWebSocketConnectionInfo.cs" />
+    <Compile Include="NoProtocolServer.cs" />
+    <Compile Include="SimpleSocketConnection.cs" />
     <Compile Include="SocketWrapper.cs" />
     <Compile Include="WebSocketConnectionInfo.cs" />
     <Compile Include="WebSocketServer.cs" />

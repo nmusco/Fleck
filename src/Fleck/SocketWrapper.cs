@@ -87,6 +87,59 @@ namespace Fleck
             set { _socket.NoDelay = value; }
         }
 
+        bool _keepalive = false;
+        public bool KeepAlive
+        {
+            get
+            {
+                return _keepalive;
+            }
+            set
+            {
+                try
+                {
+                    const ulong time = 1000;        // Response Time
+                    const ulong interval = 30000;   // Send Interval
+
+                    // resulting structure
+                    byte[] SIO_KEEPALIVE_VALS = new byte[3 * 4];
+
+                    // array to hold input values
+                    ulong[] input = new ulong[3];
+
+                    // put input arguments in input array
+                    if (value && time > 0 && interval > 0) // enable disable keep-alive
+                        input[0] = (1UL);   // on
+                    else
+                        input[0] = (0UL);   // off
+
+                    input[1] = (time);      // time millis
+                    input[2] = (interval);  // interval millis
+
+                    // pack input into byte struct
+                    for (int i = 0; i < input.Length; i++)
+                    {
+                        SIO_KEEPALIVE_VALS[(i * 4) + 3] = (byte)(input[i] >> ((4 - 1) * 8) & 0xff);
+                        SIO_KEEPALIVE_VALS[(i * 4) + 2] = (byte)(input[i] >> ((4 - 2) * 8) & 0xff);
+                        SIO_KEEPALIVE_VALS[(i * 4) + 1] = (byte)(input[i] >> ((4 - 3) * 8) & 0xff);
+                        SIO_KEEPALIVE_VALS[(i * 4) + 0] = (byte)(input[i] >> ((4 - 4) * 8) & 0xff);
+                    }
+
+                    // create bytestruct for result (bytes pending on server socket)
+                    byte[] result = BitConverter.GetBytes(0);
+
+                    // write SIO_VALS to Socket IOControl
+                    _socket.IOControl(IOControlCode.KeepAliveValues, SIO_KEEPALIVE_VALS, result);
+
+                    _keepalive = true;
+                }
+                catch (Exception)
+                {
+                    _keepalive = false;
+                }
+            }
+        }
+
         public Task<int> Receive(byte[] buffer, Action<int> callback, Action<Exception> error, int offset)
         {
             try

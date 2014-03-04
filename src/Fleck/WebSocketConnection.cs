@@ -23,6 +23,8 @@ namespace Fleck
 			_negotiateSubProtocol = negotiateSubProtocol;
 		}
 
+        public ISocket Socket { get; set; }
+
 		private readonly Action<IWebSocketConnection> _initialize;
 		private readonly Func<WebSocketHttpRequest, IHandler> _handlerFactory;
 		private readonly Func<IEnumerable<string>, string> _negotiateSubProtocol;
@@ -97,7 +99,7 @@ namespace Fleck
 			else
 			{
 				data.AddRange(readBytes);
-				CreateHandler(data);
+                CreateHandler(data); // This should be where the HTTP connection is initially made.
 			}
 		}
 

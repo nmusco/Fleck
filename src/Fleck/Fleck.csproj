@@ -65,6 +65,10 @@
     </When>
   </Choose>
   <ItemGroup>
+    <Compile Include="ByteExtensions.cs" />
+    <Compile Include="HttpRequestParser.cs" />
+    <Compile Include="HttpValidationException.cs" />
+    <Compile Include="HttpValidationExceptionTypes.cs" />
     <Compile Include="QueuedStream.cs" />
     <Compile Include="Handlers\ComposableHandler.cs" />
     <Compile Include="Handlers\Draft76Handler.cs" />
@@ -76,8 +80,10 @@
     <Compile Include="Interfaces\IWebSocketConnectionInfo.cs" />
     <Compile Include="PolicyServer.cs" />
     <Compile Include="SocketConnection.cs" />
+    <Compile Include="SocketExtensions.cs" />
     <Compile Include="SocketWrapper.cs" />
     <Compile Include="WebSocketConnectionInfo.cs" />
+    <Compile Include="WebSocketHttpResponse.cs" />
     <Compile Include="WebSocketServer.cs" />
     <Compile Include="WebSocketHttpRequest.cs" />
     <Compile Include="RequestParser.cs" />

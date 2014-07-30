@@ -21,7 +21,7 @@ namespace Fleck
                 return -1;
             }
         }
-        public static unsafe List<int> IndexesOf(this byte[] Haystack, byte[] Needle)
+        public static unsafe IEnumerable<int> IndexesOf(this byte[] Haystack, byte[] Needle)
         {
             var list = new List<int>();
             fixed (byte* H = Haystack) fixed (byte* N = Needle)
@@ -31,10 +31,9 @@ namespace Fleck
                 {
                     bool Found = true;
                     for (byte* hInc = hNext, nInc = N, nEnd = N + Needle.LongLength; Found && nInc < nEnd; Found = *nInc == *hInc, nInc++, hInc++) ;
-                    if (Found) list.Add(i);
+                    if (Found) yield return (i);
                 }
             }
-            return list;
         }
         public static unsafe long LongIndexOf(this byte[] Haystack, byte[] Needle)
         {
@@ -50,7 +49,7 @@ namespace Fleck
                 return -1;
             }
         }
-        public static unsafe List<long> LongIndexesOf(this byte[] Haystack, byte[] Needle)
+        public static unsafe IEnumerable<long> LongIndexesOf(this byte[] Haystack, byte[] Needle)
         {
             var list = new List<long>();
             fixed (byte* H = Haystack) fixed (byte* N = Needle)
@@ -60,10 +59,9 @@ namespace Fleck
                 {
                     bool Found = true;
                     for (byte* hInc = hNext, nInc = N, nEnd = N + Needle.LongLength; Found && nInc < nEnd; Found = *nInc == *hInc, nInc++, hInc++) ;
-                    if (Found) list.Add(i);
+                    if (Found) yield return (i);
                 }
             }
-            return list;
         }
     }
 }

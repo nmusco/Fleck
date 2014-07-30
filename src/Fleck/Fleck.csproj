@@ -124,5 +124,10 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\asynchttpmachine\src\HttpMachine\HttpMachine.csproj">
+      <Project>{76fb25c5-15b1-4541-8d19-d78790257c95}</Project>
+      <Name>HttpMachine</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

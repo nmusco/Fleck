@@ -9,7 +9,12 @@ namespace Fleck
 {
     public class WebSocketServer : IWebSocketServer
     {
+<<<<<<< HEAD
 		private readonly IPEndPoint _ipEndPoint;
+=======
+        private readonly string _scheme;
+        private readonly IPAddress _locationIP;
+>>>>>>> statianzo/master
         private Action<IWebSocketConnection> _config;
 
 		public WebSocketServer()
@@ -17,6 +22,7 @@ namespace Fleck
 		public WebSocketServer(int port)
 			: this(IPAddress.Any, port) { }
 
+<<<<<<< HEAD
 		public WebSocketServer(IPAddress ipAddress, int port = 8181)
 		{
 			_ipEndPoint = new IPEndPoint(ipAddress, port);
@@ -25,6 +31,19 @@ namespace Fleck
 			ListenerSocket = new SocketWrapper(socket);
 			SupportedSubProtocols = new string[0];
 		}
+=======
+        public WebSocketServer(int port, string location)
+        {
+            var uri = new Uri(location);
+            Port = uri.Port > 0 ? uri.Port : port;
+            Location = location;
+            _locationIP = ParseIPAddress(uri);
+            _scheme = uri.Scheme;
+            var socket = new Socket(_locationIP.AddressFamily, SocketType.Stream, ProtocolType.IP);
+            ListenerSocket = new SocketWrapper(socket);
+            SupportedSubProtocols = new string[0];
+        }
+>>>>>>> statianzo/master
 
         public ISocket ListenerSocket { get; set; }
 		public X509Certificate2 Certificate { get; set; }
@@ -42,9 +61,29 @@ namespace Fleck
             ListenerSocket.Dispose();
         }
 
+        private IPAddress ParseIPAddress(Uri uri)
+        {
+            string ipStr = uri.Host;
+
+            if (ipStr == "0.0.0.0") {
+                return IPAddress.Any;
+            } else {
+                try {
+                    return IPAddress.Parse(ipStr);
+                } catch (Exception ex) {
+                    throw new FormatException("Failed to parse the IP address part of the location. Please make sure you specify a valid IP address. Use 0.0.0.0 to listen on all interfaces.", ex);
+                }
+            }
+        }
+
         public void Start(Action<IWebSocketConnection> config)
         {
+<<<<<<< HEAD
             ListenerSocket.Bind(_ipEndPoint);
+=======
+            var ipLocal = new IPEndPoint(_locationIP, Port);
+            ListenerSocket.Bind(ipLocal);
+>>>>>>> statianzo/master
             ListenerSocket.Listen(100);
 
             FleckLog.Info("Server started at " + Location);

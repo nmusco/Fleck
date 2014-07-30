@@ -11,7 +11,11 @@ namespace Fleck.Samples.ConsoleApp
         {
             FleckLog.Level = LogLevel.Debug;
             var allSockets = new List<IWebSocketConnection>();
+<<<<<<< HEAD
             var server = new WebSocketServer();
+=======
+            var server = new WebSocketServer("ws://0.0.0.0:8181");
+>>>>>>> statianzo/master
             server.Start(socket =>
                 {
                     socket.OnOpen = () =>
